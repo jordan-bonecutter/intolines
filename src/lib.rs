@@ -1,20 +1,30 @@
-struct IntoLines {
+pub struct IntoLines {
     str: String,
     head: usize,
 }
 
 impl IntoLines {
-    fn next(&mut self) -> Option<&str> {
+    pub fn next(&mut self) -> Option<&str> {
         if self.head >= self.str.len() {
             return None;
         }
 
         self.head += 1;
         let start = if self.head == 1 {0} else {self.head};
+
         while self.head < self.str.len() && self.str.as_bytes()[self.head] as char != '\n' {
             self.head += 1;
         }
 
+        // We know this is safe because utf8 code points either:
+        // byte&0x80 == 0 => code point is 1 byte long
+        // byte&0x80 == 1 => code point is not 1 byte long
+        //
+        // Because the newline character has the property that '\n'&0x80==0 we
+        // know we are at the end of a utf8 codepoint and can safely assume the
+        // bytes to describe valid utf8. This would not be true if we were 
+        // splitting on a char whose integral value were greater than 128, but
+        // this is not the case.
         return unsafe {
              Some(std::str::from_utf8_unchecked(&self.str.as_bytes()[start..self.head]))
         }
